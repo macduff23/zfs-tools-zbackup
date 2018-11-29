@@ -31,6 +31,7 @@ parser.add_option('--ssh-cipher', action='store', dest='sshcipher', default=None
 parser.add_option('--identity-file', action='store', dest='identityfile', default=None, type="string", help='path to the SSH identity file (-i) to use (default: as per ssh_config)')
 parser.add_option('--known-hosts-file', action='store', dest='knownhostsfile', default=None, type="string", help='path to the SSH known_hosts file (-o KnownHostsFile) to use (default: as per ssh_config)')
 parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
+parser.add_option('--create-destinations', action='store_true', dest='create_destinations', default=False, help='create destination dataset and parents if missing (default: %default)')
 parser.add_option('--replication-stream', action='store_true', dest='replication_stream', default=True, help='use zfs send -R, which may destroy destination filesystems/snapshots (default: %default)')
 parser.add_option('--no-replication-stream', action='store_false', dest='replication_stream', help='don\'t use zfs send -R, to protect destination filesystems/snapshots')
 parser.add_option('--lock-source', action='store_true', dest='lock_src', default=False, help='zflock the source dataset (default: %default)')
@@ -86,9 +87,9 @@ verbose_stderr("Assessing that the destination dataset exists...")
 try:
 	destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
 except KeyError:
-	if opts.create_destination:
+	if opts.create_destination or opts.create_destinations:
 		verbose_stderr("Creating missing destination dataset exists as requested")
-		dst_conn.create_dataset(destination_dataset_name)
+		dst_conn.create_dataset(destination_dataset_name, parents=opts.create_destinations)
 		try:
 			destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
 		except KeyError:

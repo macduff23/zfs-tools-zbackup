@@ -65,8 +65,9 @@ class ZFSConnection:
         return self._poolset
     pools = property(_get_poolset)
 
-    def create_dataset(self,name):
-        subprocess.check_call(self.command + ["zfs", "create", name])
+    def create_dataset(self, name, parents=False):
+        parents_opt = ["-p"] if parents else []
+        subprocess.check_call(self.command + ["zfs", "create"] + parents_opt + [name])
         self._dirty = True
         return self.pools.lookup(name)
 
