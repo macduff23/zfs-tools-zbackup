@@ -37,6 +37,7 @@ parser.add_option('--lock-source', action='store_true', dest='lock_src', default
 parser.add_option('--lock-destination', action='store_true', dest='lock_dst', default=False, help='zflock the destination dataset (default: %default)')
 parser.add_option('--parallel', action='store', dest='parallel', type="int", default=1, metavar='N', help='number of parallel processes (default: %default)')
 parser.add_option('--parallel-log', action='store', dest='parallel_log', type="string", default="/var/log/zfs-tools/zreplicate.%(filesystem)s.%(timestamp)s", metavar='PATTERN', help='log file pattern to use in parallel mode (default: %default)')
+parser.add_option('--resumable', action='store_true', dest='resumable', default=False, help='make the transfer resumable, or resume if previous resumable transfer exists (default: %default)')
 parser.add_option('--timeformat', action='store', dest='timeformat', default="%Y-%m-%d-%H%M%S", help='time format for logfiles (default: %default)')
 parser.add_option('--utc', action='store_true', dest='utc', default=False, help='Use UTC for timestamps (default: no)')
 opts,args = parser.parse_args(sys.argv[1:])
@@ -68,7 +69,7 @@ set_verbose(opts.verbose)
 # ================ start program algorithm ===================
 
 src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile,  knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
-dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
+dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile, properties=["receive_resume_token"], verbose=opts.verbose)
 
 verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
@@ -129,9 +130,6 @@ optimized_operation_schedule = optimize(operation_schedule, allow_recursivize = 
 
 send_opts = []
 receive_opts = []
-if opts.verbose:
-	send_opts.append("-v")
-	receive_opts.append("-v")
 
 def transfer(operation):
     op,src,dst,srcs,dsts = operation
@@ -176,7 +174,9 @@ def transfer(operation):
                 send_opts=send_opts+this_send_opts,
                 receive_opts=receive_opts,
                 locksrcdataset=locksrcdataset,
-                lockdstdataset=lockdstdataset
+                lockdstdataset=lockdstdataset,
+                verbose=opts.verbose,
+                resumable=opts.resumable
             )
 
 timestamp = None
