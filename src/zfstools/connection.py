@@ -5,7 +5,7 @@ ZFS connection classes
 import subprocess
 import os
 from zfstools.models import PoolSet
-from zfstools.util import progressbar, SpecialPopen
+from zfstools.util import progressbar, SpecialPopen, verbose_stderr
 from Queue import Queue
 from threading import Thread
 
@@ -100,7 +100,11 @@ class ZFSConnection:
             if self.verbose:
                 cmd += ["-v"]
             cmd += [lockdataset, "--"]
-        cmd += ["zfs", "send"] + opts + [name]
+        cmd += ["zfs", "send"] + opts
+        if "-t" not in opts:
+            # if we're resuming, don't specify the name of what to send
+            cmd += [name]
+        verbose_stderr("%s\n" % ' '.join(cmd))
         p = SpecialPopen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
         return p
 
@@ -114,18 +118,32 @@ class ZFSConnection:
                 cmd += ["-v"]
             cmd += [lockdataset, "--"]
         cmd = cmd + ["zfs", "receive"] + opts + [name]
+        verbose_stderr("%s\n" % ' '.join(cmd))
         p = SpecialPopen(cmd,stdin=pipe,bufsize=bufsize)
         return p
 
-    def transfer(self, dst_conn, s, d, fromsnapshot=None, showprogress=False, bufsize=-1, send_opts=None, receive_opts=None, ratelimit=-1, compression=False, locksrcdataset=None, lockdstdataset=None):
+    def transfer(self, dst_conn, s, d, fromsnapshot=None, showprogress=False, bufsize=-1, send_opts=None, receive_opts=None, ratelimit=-1, compression=False, locksrcdataset=None, lockdstdataset=None, verbose=False, resumable=False):
         if send_opts is None: send_opts = []
         if receive_opts is None: receive_opts = []
+
+        try:
+            resume_token = dst_conn.pools.lookup(d).get_property("receive_resume_token")
+        except:
+            resume_token = None
 
         queue_of_killables = Queue()
 
         if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
         else: fromsnapshot = []
-        sndprg = self.send(s, opts=[] + fromsnapshot + send_opts, bufsize=bufsize, compression=compression, lockdataset=locksrcdataset)
+        if verbose: verbose_opts = ["-v"]
+        else: verbose_opts = []
+        # Regardless of whether resumable is requested this time , if
+        # there's a resume token on the destination, we have to use it.
+        if resume_token is not None:
+            all_send_opts = ["-t", resume_token] + verbose_opts
+        else:
+            all_send_opts = [] + fromsnapshot + send_opts + verbose_opts
+        sndprg = self.send(s, opts=all_send_opts, bufsize=bufsize, compression=compression, lockdataset=locksrcdataset)
         sndprg_supervisor = Thread(target=lambda: queue_of_killables.put((sndprg, sndprg.wait())))
         sndprg_supervisor.start()
 
@@ -142,7 +160,10 @@ class ZFSConnection:
             barprg = sndprg
 
         try:
-                        rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression, lockdataset=lockdstdataset)
+                        if resumable: resumable_recv_opts = ["-s"]
+                        else: resumable_recv_opts = []
+                        all_recv_opts = ["-Fu"] + verbose_opts + resumable_recv_opts + receive_opts
+                        rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=all_recv_opts,bufsize=bufsize,compression=compression, lockdataset=lockdstdataset)
                         rcvprg_supervisor = Thread(target=lambda: queue_of_killables.put((rcvprg, rcvprg.wait())))
                         rcvprg_supervisor.start()
                         barprg.stdout.close()
