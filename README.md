@@ -6,6 +6,19 @@
 being maintained directly here by the original author of the `zbackup`
 utility, and has its own release numbering.*
 
+*Differences from upstream include (but may not be limited to):*
+
+* *parallel replication, for increased performance of `zreplicate`*
+
+* *locking of filesystems during replication, to avoid problems
+  arising from very long replications*
+
+* *resumable replications using the facility introduced in zfs 0.7.0*
+
+*This version of the zfs-tools suite is used in production on the
+author's system comprising 7 fileservers, 3400 filesystems, and 550TB
+of data.*
+
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
 into a backup machine, without having to screw around snapshot names or
 complicated shell commands or crontabs.
