@@ -82,4 +82,4 @@ The problem with ZFS replication streams arises when you have nested ZFS dataset
 zbackup avoids this unsafe behaviour following a `zfs destroy` operation on the source side.
 
 ## Author
-zbackup was written by Simon Guest, developed in the [tesujimath fork of zfs-tools](https://github.com/tesujimath/zfs-tools), and now contributed upstream.  Thanks to the original author of zfs-tools for providing an excellent framework on which to base zbackup.
+zbackup was written by Simon Guest, developed in the [tesujimath fork of zfs-tools](https://github.com/tesujimath/zfs-tools-zbackup), and initially contributed upstream, although later diverging.  Thanks to the original author of zfs-tools for providing an excellent framework on which to base zbackup.

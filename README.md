@@ -1,9 +1,10 @@
 # ZFS tools
 
-| Donate to support this free software |
-|:------------------------------------:|
-| <img width="164" height="164" title="" alt="" src="doc/bitcoin.png" /> |
-| [1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN) |
+*This repo has diverged from the upstream
+[Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools), as described
+[here](https://github.com/Rudd-O/zfs-tools/issues/25).  It is now
+being maintained directly here by the original author of the `zbackup`
+utility, and has its own release numbering.*
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
 into a backup machine, without having to screw around snapshot names or
@@ -11,16 +12,16 @@ complicated shell commands or crontabs.
 
 The utilities let you do this:
 
-1. zfs-shell:  
+1. zfs-shell:
    a shell that allows remote ZFS administration and nothing more
 
-3. zsnap:  
+3. zsnap:
    a command that snapshots a dataset or pool, then deletes old snapshots
 
-4. zreplicate  
+4. zreplicate
    a command that replicates an entire dataset tree using ZFS replication
    streams.  Best used in combination with zsnap as in:
-   
+
    - zsnap on the local machine
    - zreplicate from the local machine to the destination machine
 
@@ -28,7 +29,7 @@ The utilities let you do this:
    the destination machine by zreplicate, as a side effect of using
    replication streams.  To inhibit this, use the
    --no-replication-stream option.
-   
+
    Run `zreplicate --help` for a compendium of options you may use.
 
 5. zbackup:
@@ -40,8 +41,6 @@ The utilities let you do this:
    a command to lock a filesystem against replication by zbackup.
    For details, see this [further description of zbackup](doc/README-zbackup.md).
 
-The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
-
 ## Setting up
 
 Setup is rather complicated.  It assumes that you already have ZFS running
@@ -50,16 +49,16 @@ will be receiving the backup.
 
 ### On the machine to back up
 
-- Install the zfs-shell command   
-  `cp zfs-shell /usr/local/sbin`  
-  `chmod 755 /usr/local/sbin/zfs-shell`  
-  `chown root.root /usr/local/sbin/zfs-shell`  
+- Install the zfs-shell command
+  `cp zfs-shell /usr/local/sbin`
+  `chmod 755 /usr/local/sbin/zfs-shell`
+  `chown root.root /usr/local/sbin/zfs-shell`
 
-- Create a user with a home directory and shell `zfs-shell`  
+- Create a user with a home directory and shell `zfs-shell`
   `useradd -rUm -b /var/lib -s /usr/local/sbin/zfs-shell zfs`
 
-- Let `sudo` know that the new user can run the zfs command  
-  `zfs ALL = NOPASSWD: /usr/local/sbin/zfs`  
+- Let `sudo` know that the new user can run the zfs command
+  `zfs ALL = NOPASSWD: /usr/local/sbin/zfs`
   (ensure you remove the `requiretty` default on `/etc/sudoers`)
   (check `sudoers.zfs-tools` in `contrib/` for an example)
 
